@@ -4,6 +4,9 @@
 
 # keymapgen
 
+**[Try it: keymap.fabianlackner.com](https://keymap.fabianlackner.com)** — no install, nothing
+leaves your browser.
+
 **keymapgen** is a web-based, visual keyboard configuration tool that allows you to intuitively remap your keyboard, define multiple layers, and export the resulting configuration to either [keyd](https://github.com/rvaiya/keyd) (`.conf`) or AutoHotkey (`.ahk`) formats.
 
 ## Features
