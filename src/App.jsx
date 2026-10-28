@@ -1,43 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Keyboard } from './components/Keyboard';
 import { Editor } from './components/Editor';
 import { parseConfig, generateConfig } from './utils/configParser';
 import { parseAhkConfig, generateAhkConfig } from './utils/ahkParser';
-
-const DEFAULT_CONFIG = {
-  ids: ['*'],
-  layers: [
-    {
-      name: 'main',
-      modifier: null,
-      mappings: {
-        '1': 'S-C-1',
-        '2': 'S-C-2',
-        '3': 'S-C-c',
-        '4': 'S-C-v',
-        '5': 'f2',
-        '6': 'f3',
-        '7': 'f4',
-        '8': 'f10',
-        '9': 'f11',
-        '0': 'macro2(50, 50, scrolldown)'
-      }
-    }
-  ]
-};
+import { DEFAULT_CONFIG } from './utils/defaultConfig';
 
 function App() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [activeLayerIndex, setActiveLayerIndex] = useState(0);
   const [selectedKeyId, setSelectedKeyId] = useState(null);
-  const [layout, setLayout] = useState('en');
+  const [layout, setLayout] = useState('de');
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [loadText, setLoadText] = useState('');
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportText, setExportText] = useState('');
-  const [fileName, setFileName] = useState('default.conf');
+  const [fileName, setFileName] = useState('famak.conf');
   const [exportFormat, setExportFormat] = useState('keyd');
 
   const activeLayer = config.layers[activeLayerIndex];
@@ -120,11 +99,11 @@ function App() {
       let parsed;
       if (loadText.includes('#If') || loadText.includes('::')) {
         parsed = parseAhkConfig(loadText);
-        setFileName('default.ahk');
+        setFileName('famak.ahk');
         setExportFormat('ahk');
       } else {
         parsed = parseConfig(loadText);
-        setFileName('default.conf');
+        setFileName('famak.conf');
         setExportFormat('keyd');
       }
       setConfig(parsed);
@@ -149,10 +128,10 @@ function App() {
     if (isExportModalOpen) {
       if (exportFormat === 'ahk') {
         setExportText(generateAhkConfig(config));
-        setFileName(prev => prev.endsWith('.conf') ? prev.replace('.conf', '.ahk') : prev.endsWith('.ahk') ? prev : 'default.ahk');
+        setFileName(prev => prev.endsWith('.conf') ? prev.replace('.conf', '.ahk') : prev.endsWith('.ahk') ? prev : 'famak.ahk');
       } else {
         setExportText(generateConfig(config));
-        setFileName(prev => prev.endsWith('.ahk') ? prev.replace('.ahk', '.conf') : prev.endsWith('.conf') ? prev : 'default.conf');
+        setFileName(prev => prev.endsWith('.ahk') ? prev.replace('.ahk', '.conf') : prev.endsWith('.conf') ? prev : 'famak.conf');
       }
     }
   }, [exportFormat, config, isExportModalOpen]);
