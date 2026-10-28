@@ -5,6 +5,14 @@ import confFamak from '../../examples/famak.conf?raw';
 
 export const PRESETS = [
   {
+    id: 'blank',
+    name: 'Blank',
+    description: 'Clean keymap with nothing mapped',
+    content: '[ids]\n*\n\n[main]\n',
+    filename: 'keymap.conf',
+    layout: 'en'
+  },
+  {
     id: '3l',
     name: '3l',
     description: 'Jack Rosenthal\'s three-layer keyboard layout',

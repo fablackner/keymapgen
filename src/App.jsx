@@ -154,6 +154,20 @@ function App() {
     }
   }, [exportFormat, keymap, isExportModalOpen]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isLoadModalOpen) setIsLoadModalOpen(false);
+        if (isExportModalOpen) setIsExportModalOpen(false);
+      }
+    };
+
+    if (isLoadModalOpen || isExportModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isLoadModalOpen, isExportModalOpen]);
+
   const handleOpenFile = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -253,7 +267,7 @@ function App() {
       </div>
 
       {isLoadModalOpen && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setIsLoadModalOpen(false); }}>
           <div className="modal" style={{ maxWidth: '650px' }}>
             <h2>Load Keymap</h2>
 
@@ -261,7 +275,7 @@ function App() {
               <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.6rem', fontWeight: 600 }}>
                 Presets:
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '0.65rem' }}>
                 {PRESETS.map(preset => (
                   <button
                     key={preset.id}
@@ -273,15 +287,19 @@ function App() {
                       justifyContent: 'center',
                       padding: '0.85rem 0.5rem',
                       textAlign: 'center',
-                      border: '1px solid var(--border-color)',
+                      border: preset.id === 'blank' ? '1px dashed var(--accent, #38bdf8)' : '1px solid var(--border-color)',
                       borderRadius: '0.5rem',
                       cursor: 'pointer',
                       background: 'var(--bg-color)'
                     }}
                     onClick={() => handleLoadPreset(preset)}
                   >
-                    <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-main)' }}>{preset.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{preset.filename}</span>
+                    <span style={{ fontWeight: 700, fontSize: '1rem', color: preset.id === 'blank' ? 'var(--accent, #38bdf8)' : 'var(--text-main)' }}>
+                      {preset.id === 'blank' ? 'Clear' : preset.name}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      {preset.id === 'blank' ? 'Blank keymap' : preset.filename}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -323,7 +341,7 @@ function App() {
       )}
 
       {isExportModalOpen && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setIsExportModalOpen(false); }}>
           <div className="modal">
             <h2>Export Keymap</h2>
             <div className="form-group" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
