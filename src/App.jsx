@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Keyboard } from './components/Keyboard';
 import { Editor } from './components/Editor';
-import { parseConfig, generateConfig } from './utils/configParser';
-import { parseAhkConfig, generateAhkConfig } from './utils/ahkParser';
-import { DEFAULT_CONFIG } from './utils/defaultConfig';
+import { parseKeymap, generateKeymap } from './utils/keymapParser';
+import { parseAhkKeymap, generateAhkKeymap } from './utils/ahkParser';
+import { DEFAULT_KEYMAP } from './utils/defaultKeymap';
+import { PRESETS } from './utils/presets';
 
 function App() {
-  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [keymap, setKeymap] = useState(DEFAULT_KEYMAP);
   const [activeLayerIndex, setActiveLayerIndex] = useState(0);
   const [selectedKeyId, setSelectedKeyId] = useState(null);
-  const [layout, setLayout] = useState('de');
+  const [layout, setLayout] = useState('en');
 
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [loadText, setLoadText] = useState('');
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportText, setExportText] = useState('');
-  const [fileName, setFileName] = useState('famak.conf');
+  const [fileName, setFileName] = useState('keymap.conf');
   const [exportFormat, setExportFormat] = useState('keyd');
 
-  const activeLayer = config.layers[activeLayerIndex];
+  const activeLayer = keymap.layers[activeLayerIndex] || keymap.layers[0];
 
   const handleKeyClick = (keyId) => {
     setSelectedKeyId(keyId);
@@ -28,9 +29,9 @@ function App() {
   const handleActionChange = (newAction) => {
     if (!selectedKeyId) return;
 
-    setConfig(prev => {
-      const newConfig = { ...prev, layers: [...prev.layers] };
-      const layerToUpdate = { ...newConfig.layers[activeLayerIndex], mappings: { ...newConfig.layers[activeLayerIndex].mappings } };
+    setKeymap(prev => {
+      const newKeymap = { ...prev, layers: [...prev.layers] };
+      const layerToUpdate = { ...newKeymap.layers[activeLayerIndex], mappings: { ...newKeymap.layers[activeLayerIndex].mappings } };
 
       if (newAction === '') {
         delete layerToUpdate.mappings[selectedKeyId];
@@ -38,8 +39,8 @@ function App() {
         layerToUpdate.mappings[selectedKeyId] = newAction;
       }
 
-      newConfig.layers[activeLayerIndex] = layerToUpdate;
-      return newConfig;
+      newKeymap.layers[activeLayerIndex] = layerToUpdate;
+      return newKeymap;
     });
   };
 
@@ -54,11 +55,11 @@ function App() {
         modifier = parts.slice(1).join(':');
       }
 
-      setConfig(prev => ({
+      setKeymap(prev => ({
         ...prev,
         layers: [...prev.layers, { name, modifier, mappings: {} }]
       }));
-      setActiveLayerIndex(config.layers.length);
+      setActiveLayerIndex(keymap.layers.length);
     }
   };
 
@@ -75,10 +76,10 @@ function App() {
         modifier = parts.slice(1).join(':');
       }
 
-      setConfig(prev => {
-        const newConfig = { ...prev, layers: [...prev.layers] };
-        newConfig.layers[activeLayerIndex] = { ...newConfig.layers[activeLayerIndex], name, modifier };
-        return newConfig;
+      setKeymap(prev => {
+        const newKeymap = { ...prev, layers: [...prev.layers] };
+        newKeymap.layers[activeLayerIndex] = { ...newKeymap.layers[activeLayerIndex], name, modifier };
+        return newKeymap;
       });
     }
   };
@@ -86,7 +87,7 @@ function App() {
   const removeLayer = () => {
     if (activeLayerIndex === 0) return; // Cannot remove main layer
     if (window.confirm(`Are you sure you want to remove the layer "${activeLayer.name}"?`)) {
-      setConfig(prev => {
+      setKeymap(prev => {
         const newLayers = prev.layers.filter((_, idx) => idx !== activeLayerIndex);
         return { ...prev, layers: newLayers };
       });
@@ -94,32 +95,49 @@ function App() {
     }
   };
 
-  const loadConfig = () => {
+  const loadKeymap = () => {
     try {
       let parsed;
       if (loadText.includes('#If') || loadText.includes('::')) {
-        parsed = parseAhkConfig(loadText);
-        setFileName('famak.ahk');
+        parsed = parseAhkKeymap(loadText);
+        setFileName('keymap.ahk');
         setExportFormat('ahk');
       } else {
-        parsed = parseConfig(loadText);
-        setFileName('famak.conf');
+        parsed = parseKeymap(loadText);
+        setFileName('keymap.conf');
         setExportFormat('keyd');
       }
-      setConfig(parsed);
+      setKeymap(parsed);
       setActiveLayerIndex(0);
       setIsLoadModalOpen(false);
       setLoadText('');
     } catch (e) {
-      alert("Error parsing config: " + e.message);
+      alert("Error parsing keymap: " + e.message);
+    }
+  };
+
+  const handleLoadPreset = (preset) => {
+    try {
+      const parsed = parseKeymap(preset.content);
+      setKeymap(parsed);
+      setActiveLayerIndex(0);
+      setFileName(preset.filename);
+      setExportFormat('keyd');
+      if (preset.layout) {
+        setLayout(preset.layout);
+      }
+      setIsLoadModalOpen(false);
+      setLoadText('');
+    } catch (e) {
+      alert("Error loading preset: " + e.message);
     }
   };
 
   const openExportModal = () => {
     if (exportFormat === 'ahk') {
-      setExportText(generateAhkConfig(config));
+      setExportText(generateAhkKeymap(keymap));
     } else {
-      setExportText(generateConfig(config));
+      setExportText(generateKeymap(keymap));
     }
     setIsExportModalOpen(true);
   };
@@ -127,14 +145,14 @@ function App() {
   useEffect(() => {
     if (isExportModalOpen) {
       if (exportFormat === 'ahk') {
-        setExportText(generateAhkConfig(config));
-        setFileName(prev => prev.endsWith('.conf') ? prev.replace('.conf', '.ahk') : prev.endsWith('.ahk') ? prev : 'famak.ahk');
+        setExportText(generateAhkKeymap(keymap));
+        setFileName(prev => prev.endsWith('.conf') ? prev.replace('.conf', '.ahk') : prev.endsWith('.ahk') ? prev : 'keymap.ahk');
       } else {
-        setExportText(generateConfig(config));
-        setFileName(prev => prev.endsWith('.ahk') ? prev.replace('.ahk', '.conf') : prev.endsWith('.conf') ? prev : 'famak.conf');
+        setExportText(generateKeymap(keymap));
+        setFileName(prev => prev.endsWith('.ahk') ? prev.replace('.ahk', '.conf') : prev.endsWith('.conf') ? prev : 'keymap.conf');
       }
     }
-  }, [exportFormat, config, isExportModalOpen]);
+  }, [exportFormat, keymap, isExportModalOpen]);
 
   const handleOpenFile = () => {
     const input = document.createElement('input');
@@ -150,8 +168,8 @@ function App() {
         setExportFormat('keyd');
       }
       const contents = await file.text();
-      const parsed = file.name.toLowerCase().endsWith('.ahk') ? parseAhkConfig(contents) : parseConfig(contents);
-      setConfig(parsed);
+      const parsed = file.name.toLowerCase().endsWith('.ahk') ? parseAhkKeymap(contents) : parseKeymap(contents);
+      setKeymap(parsed);
       setActiveLayerIndex(0);
       setIsLoadModalOpen(false);
       setLoadText('');
@@ -168,8 +186,8 @@ function App() {
       nameToSave = inputName.endsWith(expectedExt) ? inputName : `${inputName.split('.')[0]}${expectedExt}`;
       setFileName(nameToSave);
     }
-    const finalConfigStr = exportFormat === 'ahk' ? generateAhkConfig(config) : generateConfig(config);
-    const blob = new Blob([finalConfigStr], { type: 'text/plain' });
+    const finalKeymapStr = exportFormat === 'ahk' ? generateAhkKeymap(keymap) : generateKeymap(keymap);
+    const blob = new Blob([finalKeymapStr], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -188,8 +206,8 @@ function App() {
             <option value="en">EN Layout</option>
             <option value="de">DE Layout</option>
           </select>
-          <button className="btn" onClick={() => setIsLoadModalOpen(true)}>Load Config</button>
-          <button className="btn primary" onClick={openExportModal}>Export Config</button>
+          <button className="btn" onClick={() => setIsLoadModalOpen(true)}>Load Keymap</button>
+          <button className="btn primary" onClick={openExportModal}>Export Keymap</button>
         </div>
       </div>
 
@@ -197,7 +215,7 @@ function App() {
         <div className="workspace">
           <div className="layer-tabs" style={{ width: '100%', maxWidth: '1100px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {config.layers.map((layer, index) => (
+              {keymap.layers.map((layer, index) => (
                 <button
                   key={index}
                   className={`layer-tab ${activeLayerIndex === index ? 'active' : ''}`}
@@ -230,27 +248,75 @@ function App() {
           selectedKeyId={selectedKeyId}
           currentAction={selectedKeyId ? activeLayer.mappings[selectedKeyId] : ''}
           onActionChange={handleActionChange}
-          layers={config.layers}
+          layers={keymap.layers}
         />
       </div>
 
       {isLoadModalOpen && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h2>Load Configuration</h2>
-            <div className="form-group">
-              <label>Paste your keyd config here:</label>
+          <div className="modal" style={{ maxWidth: '650px' }}>
+            <h2>Load Keymap</h2>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.6rem', fontWeight: 600 }}>
+                Presets:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                {PRESETS.map(preset => (
+                  <button
+                    key={preset.id}
+                    className="btn"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.85rem 0.5rem',
+                      textAlign: 'center',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      background: 'var(--bg-color)'
+                    }}
+                    onClick={() => handleLoadPreset(preset)}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-main)' }}>{preset.name}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{preset.filename}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                    Load from file
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                    Supply a keyd .conf file from your disk
+                  </div>
+                </div>
+                <button className="btn" onClick={handleOpenFile} style={{ padding: '0.5rem 1rem' }}>
+                  Choose .conf File
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
+              <label style={{ fontWeight: 600 }}>Or paste keyd .conf text:</label>
               <textarea
                 value={loadText}
                 onChange={e => setLoadText(e.target.value)}
-                rows={15}
+                placeholder="[ids]&#10;*&#10;&#10;[main]&#10;q = q&#10;..."
+                rows={7}
                 style={{ fontFamily: 'monospace' }}
               />
             </div>
+
             <div className="modal-actions">
               <button className="btn" onClick={() => setIsLoadModalOpen(false)}>Cancel</button>
-              <button className="btn" style={{ marginRight: 'auto' }} onClick={handleOpenFile}>Load from File</button>
-              <button className="btn primary" onClick={loadConfig}>Load Text</button>
+              <button className="btn primary" onClick={loadKeymap}>Load Text</button>
             </div>
           </div>
         </div>
@@ -259,7 +325,7 @@ function App() {
       {isExportModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
-            <h2>Export Configuration</h2>
+            <h2>Export Keymap</h2>
             <div className="form-group" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <label style={{ margin: 0 }}>Format:</label>
               <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} style={{ padding: '0.4rem', borderRadius: '4px' }}>
@@ -268,7 +334,7 @@ function App() {
               </select>
             </div>
             <div className="form-group">
-              <label>Config contents:</label>
+              <label>Keymap contents:</label>
               <textarea
                 value={exportText}
                 readOnly

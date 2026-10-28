@@ -77,7 +77,7 @@ function keydActionToAhk(keydAction) {
   }
 }
 
-export function parseAhkConfig(ahkStr) {
+export function parseAhkKeymap(ahkStr) {
   const lines = ahkStr.split('\n');
   const result = { ids: ['*'], layers: [] };
   let currentLayer = null;
@@ -151,10 +151,10 @@ export function parseAhkConfig(ahkStr) {
   return result;
 }
 
-export function generateAhkConfig(configObj) {
+export function generateAhkKeymap(keymapObj) {
   let output = `#Persistent\n#MaxHotkeysPerInterval 999999999\n\n`;
 
-  configObj.layers.forEach(layer => {
+  keymapObj.layers.forEach(layer => {
     if (layer.name === 'main') {
       output += `#If (keymapIsActive)\n\n`;
     } else {
@@ -264,3 +264,7 @@ activeBox(text){
 
   return output;
 }
+
+// Aliases for backwards compatibility
+export const parseAhkConfig = parseAhkKeymap;
+export const generateAhkConfig = generateAhkKeymap;

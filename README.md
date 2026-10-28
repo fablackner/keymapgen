@@ -18,11 +18,11 @@ leaves your browser.
 
 ## How to Use the UI Tool
 
-1. **Load Configuration:** Click **Load Config** to either paste your existing configuration text or upload a `.conf` / `.ahk` file.
+1. **Load Keymap:** Click **Load Keymap** to select from presets (`3l`, `colemak`, `dvorak`, `famak`), upload a `.conf` / `.ahk` file, or paste your keymap text.
 2. **Select Layers:** Use the layer tabs (e.g., `main`, `nav`) at the top to switch the layer you are currently editing.
 3. **Map Keys:** Click on any key on the visual keyboard representation. In the right-hand panel, define the action or mapping for that key (e.g., `C-c` for Copy, `layer(nav)` to trigger a layer).
 4. **Manage Layers:** You can Rename, Remove, or Add new layers using the buttons in the layer bar.
-5. **Export Configuration:** Click **Export Config** to generate the final script. Choose between Keyd or AHK format and download or copy the resulting code.
+5. **Export Keymap:** Click **Export Keymap** to generate the final script. Choose between Keyd or AHK format and download or copy the resulting code.
 
 ## Examples
 
